@@ -27,6 +27,8 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import javax.crypto.Cipher;
+
 /**
  * A dialog which uses fingerprint APIs to authenticate the user, and falls back
  * to password authentication if fingerprint is not available.
@@ -48,10 +50,12 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     private FingerprintUiHelper mFingerprintUiHelper;
     FingerprintUiHelper.FingerprintUiHelperBuilder mFingerprintUiHelperBuilder;
 
-    private final String description;
+    private final int mCipherMode;
+    private final String mDescription;
 
-    public FingerprintAuthenticationDialogFragment(String description) {
-        this.description = description;
+    public FingerprintAuthenticationDialogFragment(int cipherMode, String description) {
+        this.mCipherMode = cipherMode;
+        this.mDescription = description;
     }
 
     @Override
@@ -70,7 +74,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
         int fingerprint_auth_dialog_title_id = getResources()
                 .getIdentifier("fingerprint_auth_dialog_title", "string",
                         FingerprintAuth.packageName);
@@ -92,7 +96,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         int fingerprint_description_id = getResources()
                 .getIdentifier("fingerprint_description", "id", FingerprintAuth.packageName);
         TextView mFingerprintDescription = (TextView) v.findViewById(fingerprint_description_id);
-        mFingerprintDescription.setText(this.description);
+        mFingerprintDescription.setText(this.mDescription);
 
         int fingerprint_container_id = getResources()
                 .getIdentifier("fingerprint_container", "id", FingerprintAuth.packageName);
@@ -149,13 +153,20 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
                 mFingerprintContent.setVisibility(View.VISIBLE);
                 break;
             case NEW_FINGERPRINT_ENROLLED:
-            // Intentional fall through
+                // Intentional fall through
         }
     }
 
     @Override
     public void onAuthenticated() {
-        FingerprintAuth.onAuthenticated();
+        switch(this.mCipherMode){
+            case Cipher.ENCRYPT_MODE:
+                FingerprintAuth.onAuthenticatedEncrypt();
+                break;
+            case Cipher.DECRYPT_MODE:
+                FingerprintAuth.onAuthenticatedDecrypt();
+                break;
+        }
         dismiss();
     }
 
