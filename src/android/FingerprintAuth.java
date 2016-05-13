@@ -106,13 +106,8 @@ public class FingerprintAuth extends CordovaPlugin {
             mKeyGenerator = KeyGenerator.getInstance(
                     KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE);
             mKeyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
-
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Failed to get an instance of KeyGenerator", e);
-        } catch (NoSuchProviderException e) {
-            throw new RuntimeException("Failed to get an instance of KeyGenerator", e);
-        } catch (KeyStoreException e) {
-            throw new RuntimeException("Failed to get an instance of KeyStore", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize", e);
         }
 
         try {
@@ -122,9 +117,7 @@ public class FingerprintAuth extends CordovaPlugin {
             mCipherDecryption = Cipher.getInstance(KeyProperties.KEY_ALGORITHM_AES + "/"
                     + KeyProperties.BLOCK_MODE_CBC + "/"
                     + KeyProperties.ENCRYPTION_PADDING_PKCS7);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Failed to get an instance of Cipher", e);
-        } catch (NoSuchPaddingException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to get an instance of Cipher", e);
         }
     }
@@ -280,20 +273,8 @@ public class FingerprintAuth extends CordovaPlugin {
             IvParameterSpec ivParams = mCipherEncryption.getParameters().getParameterSpec(IvParameterSpec.class);
             mInitializationVector = ivParams.getIV();
             return true;
-        } catch (KeyStoreException e) {
-            return setPluginResultError("KeyStoreException");
-        } catch (CertificateException e) {
-            return setPluginResultError("CertificateException");
-        } catch (UnrecoverableKeyException e) {
-            return setPluginResultError("UnrecoverableKeyException");
-        } catch (IOException e) {
-            return setPluginResultError("IOException");
-        } catch (NoSuchAlgorithmException e) {
-            return setPluginResultError("NoSuchAlgorithmException");
-        } catch (InvalidKeyException e) {
-            return setPluginResultError("InvalidKeyException");
         } catch (Exception e) {
-            return setPluginResultError("Exception");
+            return setPluginResultError(e.getMessage());
         }
     }
 
@@ -311,20 +292,8 @@ public class FingerprintAuth extends CordovaPlugin {
             SecretKey key = (SecretKey) mKeyStore.getKey(mAppId, null);
             mCipherDecryption.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(initializationVector));
             return true;
-        } catch (KeyStoreException e) {
-            return setPluginResultError("KeyStoreException");
-        } catch (CertificateException e) {
-            return setPluginResultError("CertificateException");
-        } catch (UnrecoverableKeyException e) {
-            return setPluginResultError("UnrecoverableKeyException");
-        } catch (IOException e) {
-            return setPluginResultError("IOException");
-        } catch (NoSuchAlgorithmException e) {
-            return setPluginResultError("NoSuchAlgorithmException");
-        } catch (InvalidKeyException e) {
-            return setPluginResultError("InvalidKeyException");
         } catch (Exception e) {
-            return setPluginResultError("Exception");
+            return setPluginResultError(e.getMessage());
         }
     }
 
@@ -343,20 +312,13 @@ public class FingerprintAuth extends CordovaPlugin {
             mKeyGenerator.init(new KeyGenParameterSpec.Builder(mAppId,
                     KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
                     .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
-                    // Require the user to authenticate with a fingerprint to authorize every use
-                    // of the key
+                    // Require the user to authenticate with a fingerprint to authorize every use of the key
                     .setUserAuthenticationRequired(true)
                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
                     .build());
             mKeyGenerator.generateKey();
-        } catch (NoSuchAlgorithmException e) {
-            setPluginResultError("NoSuchAlgorithmException");
-        } catch (InvalidAlgorithmParameterException e) {
-            setPluginResultError("InvalidAlgorithmParameterException");
-        } catch (CertificateException e) {
-            setPluginResultError("CertificateException");
-        } catch (IOException e) {
-            setPluginResultError("IOException");
+        } catch (Exception e) {
+            setPluginResultError(e.getMessage());
         }
     }
 
@@ -364,56 +326,27 @@ public class FingerprintAuth extends CordovaPlugin {
         mPluginResult = new PluginResult(PluginResult.Status.OK);
         JSONObject resultJson = new JSONObject();
         try {
-            // If the user has authenticated with fingerprint, verify that using cryptography and
-            // then return the encrypted token
-            byte[] encrypted = tryEncrypt();
+            byte[] encrypted = mCipherEncryption.doFinal(mPlain.getBytes());
             resultJson.put("result", Base64.encodeToString(encrypted, 0));
             resultJson.put("initializationVector", Base64.encodeToString(mInitializationVector, 0));
-        } catch (BadPaddingException e) {
-            Log.e(TAG, "Failed to encrypt the data with the generated key." + e.getMessage());
-        } catch (IllegalBlockSizeException e) {
-            Log.e(TAG, "Failed to encrypt the data with the generated key." + e.getMessage());
-        } catch (JSONException e) {
-            Log.e(TAG, "Failed to set resultJson key value pair: " + e.getMessage());
+        } catch (Exception e) {
+            setPluginResultError(e.getMessage());
         }
         mCallbackContext.success(resultJson);
         mCallbackContext.sendPluginResult(mPluginResult);
-    }
-
-    /**
-     * Tries to encrypt some data with the generated key in {@link #createKey}
-     * which is only works if the user has just authenticated via fingerprint.
-     */
-    private static byte[] tryEncrypt() throws BadPaddingException, IllegalBlockSizeException {
-        return mCipherEncryption.doFinal(mPlain.getBytes());
     }
 
     public static void onAuthenticatedDecrypt() {
         mPluginResult = new PluginResult(PluginResult.Status.OK);
         JSONObject resultJson = new JSONObject();
         try {
-            // If the user has authenticated with fingerprint, verify that using cryptography and
-            // then return the encrypted token
-            byte[] plain = tryDecrypt();
+            byte[] plain = mCipherDecryption.doFinal(mEncrypted);
             resultJson.put("plain", plain);
-            resultJson.put("initializationVector", Base64.encodeToString(mInitializationVector, 0));
-        } catch (BadPaddingException e) {
-            Log.e(TAG, "Failed to encrypt the data with the generated key." + e.getMessage());
-        } catch (IllegalBlockSizeException e) {
-            Log.e(TAG, "Failed to encrypt the data with the generated key." + e.getMessage());
-        } catch (JSONException e) {
-            Log.e(TAG, "Failed to set resultJson key value pair: " + e.getMessage());
+        } catch (Exception e) {
+            setPluginResultError(e.getMessage());
         }
         mCallbackContext.success(resultJson);
         mCallbackContext.sendPluginResult(mPluginResult);
-    }
-
-    /**
-     * Tries to encrypt some data with the generated key in {@link #createKey}
-     * which is only works if the user has just authenticated via fingerprint.
-     */
-    private static byte[] tryDecrypt() throws BadPaddingException, IllegalBlockSizeException {
-        return mCipherDecryption.doFinal(mEncrypted);
     }
 
     public static boolean setPluginResultError(String errorMessage) {
