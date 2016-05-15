@@ -8,21 +8,11 @@ import android.security.keystore.KeyProperties;
 import android.util.Base64;
 import android.util.Log;
 
-import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
@@ -43,6 +33,8 @@ public class FingerprintAuth extends CordovaPlugin {
 
     private static final String DIALOG_FRAGMENT_TAG = "FpAuthDialog";
     private static final String ANDROID_KEY_STORE = "AndroidKeyStore";
+    private static final String ALGORITHM = "AES";
+    private static final String TRANSFORMATION = KeyProperties.KEY_ALGORITHM_AES + "/" + KeyProperties.BLOCK_MODE_CBC + "/" + KeyProperties.ENCRYPTION_PADDING_PKCS7;
 
     KeyguardManager mKeyguardManager;
     FingerprintAuthenticationDialogFragment mFragment;
@@ -103,20 +95,15 @@ public class FingerprintAuth extends CordovaPlugin {
                 .getSystemService(FingerprintManager.class);
 
         try {
-            mKeyGenerator = KeyGenerator.getInstance(
-                    KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE);
+            mKeyGenerator = KeyGenerator.getInstance(ALGORITHM, ANDROID_KEY_STORE);
             mKeyStore = KeyStore.getInstance(ANDROID_KEY_STORE);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize", e);
         }
 
         try {
-            mCipherEncryption = Cipher.getInstance(KeyProperties.KEY_ALGORITHM_AES + "/"
-                    + KeyProperties.BLOCK_MODE_CBC + "/"
-                    + KeyProperties.ENCRYPTION_PADDING_PKCS7);
-            mCipherDecryption = Cipher.getInstance(KeyProperties.KEY_ALGORITHM_AES + "/"
-                    + KeyProperties.BLOCK_MODE_CBC + "/"
-                    + KeyProperties.ENCRYPTION_PADDING_PKCS7);
+            mCipherEncryption = Cipher.getInstance(TRANSFORMATION);
+            mCipherDecryption = Cipher.getInstance(TRANSFORMATION);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get an instance of Cipher", e);
         }
@@ -206,7 +193,6 @@ public class FingerprintAuth extends CordovaPlugin {
             final String description = arg_object.getString("description");
 
             if (isFingerprintAuthAvailable()) {
-                createKey();
                 cordova.getActivity().runOnUiThread(new Runnable() {
                     public void run() {
                         // Set up the crypto object for later. The object will be authenticated by use
@@ -326,7 +312,7 @@ public class FingerprintAuth extends CordovaPlugin {
         mPluginResult = new PluginResult(PluginResult.Status.OK);
         JSONObject resultJson = new JSONObject();
         try {
-            byte[] encrypted = mCipherEncryption.doFinal(mPlain.getBytes());
+            byte[] encrypted = mCipherEncryption.doFinal(mPlain.getBytes("UTF-8"));
             resultJson.put("result", Base64.encodeToString(encrypted, 0));
             resultJson.put("initializationVector", Base64.encodeToString(mInitializationVector, 0));
         } catch (Exception e) {
@@ -341,7 +327,7 @@ public class FingerprintAuth extends CordovaPlugin {
         JSONObject resultJson = new JSONObject();
         try {
             byte[] plain = mCipherDecryption.doFinal(mEncrypted);
-            resultJson.put("plain", plain);
+            resultJson.put("plain", new String(plain, "UTF-8"));
         } catch (Exception e) {
             setPluginResultError(e.getMessage());
         }
