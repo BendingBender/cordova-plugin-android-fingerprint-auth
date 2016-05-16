@@ -15,9 +15,8 @@
  */
 package com.cordova.plugin.android.fingerprintauth;
 
+import android.annotation.TargetApi;
 import android.app.DialogFragment;
-import android.app.KeyguardManager;
-import android.content.Context;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -33,6 +32,7 @@ import javax.crypto.Cipher;
  * A dialog which uses fingerprint APIs to authenticate the user, and falls back
  * to password authentication if fingerprint is not available.
  */
+@TargetApi(23)
 public class FingerprintAuthenticationDialogFragment extends DialogFragment
         implements FingerprintUiHelper.Callback {
 
@@ -71,14 +71,14 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
                              Bundle savedInstanceState) {
         int fingerprint_auth_dialog_title_id = getResources()
                 .getIdentifier("fingerprint_auth_dialog_title", "string",
-                        FingerprintAuth.packageName);
+                        FingerprintAuth.PACKAGE_NAME);
         getDialog().setTitle(getString(fingerprint_auth_dialog_title_id));
         int fingerprint_dialog_container_id = getResources()
                 .getIdentifier("fingerprint_dialog_container", "layout",
-                        FingerprintAuth.packageName);
+                        FingerprintAuth.PACKAGE_NAME);
         View v = inflater.inflate(fingerprint_dialog_container_id, container, false);
         int cancel_button_id = getResources()
-                .getIdentifier("cancel_button", "id", FingerprintAuth.packageName);
+                .getIdentifier("cancel_button", "id", FingerprintAuth.PACKAGE_NAME);
         mCancelButton = (Button) v.findViewById(cancel_button_id);
         mCancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,18 +88,18 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         });
 
         int fingerprint_description_id = getResources()
-                .getIdentifier("fingerprint_description", "id", FingerprintAuth.packageName);
+                .getIdentifier("fingerprint_description", "id", FingerprintAuth.PACKAGE_NAME);
         TextView mFingerprintDescription = (TextView) v.findViewById(fingerprint_description_id);
         mFingerprintDescription.setText(this.mDescription);
 
         int fingerprint_container_id = getResources()
-                .getIdentifier("fingerprint_container", "id", FingerprintAuth.packageName);
+                .getIdentifier("fingerprint_container", "id", FingerprintAuth.PACKAGE_NAME);
         mFingerprintContent = v.findViewById(fingerprint_container_id);
 
         int fingerprint_icon_id = getResources()
-                .getIdentifier("fingerprint_icon", "id", FingerprintAuth.packageName);
+                .getIdentifier("fingerprint_icon", "id", FingerprintAuth.PACKAGE_NAME);
         int fingerprint_status_id = getResources()
-                .getIdentifier("fingerprint_status", "id", FingerprintAuth.packageName);
+                .getIdentifier("fingerprint_status", "id", FingerprintAuth.PACKAGE_NAME);
         mFingerprintUiHelper = mFingerprintUiHelperBuilder.build(
                 (ImageView) v.findViewById(fingerprint_icon_id),
                 (TextView) v.findViewById(fingerprint_status_id), this);
@@ -136,7 +136,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
 
     private void updateStage() {
         int cancel_id = getResources()
-                .getIdentifier("cancel", "string", FingerprintAuth.packageName);
+                .getIdentifier("cancel", "string", FingerprintAuth.PACKAGE_NAME);
         switch (mStage) {
             case FINGERPRINT:
                 mCancelButton.setText(cancel_id);
@@ -149,7 +149,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
 
     @Override
     public void onAuthenticated() {
-        switch(this.mCipherMode){
+        switch (this.mCipherMode) {
             case Cipher.ENCRYPT_MODE:
                 FingerprintAuth.onAuthenticatedEncrypt();
                 break;
