@@ -36,16 +36,11 @@ import javax.crypto.Cipher;
 public class FingerprintAuthenticationDialogFragment extends DialogFragment
         implements FingerprintUiHelper.Callback {
 
-    private static final String TAG = "FingerprintAuthDialog";
-    private static final int REQUEST_CODE_CONFIRM_DEVICE_CREDENTIALS = 1;
-
     private Button mCancelButton;
-    //private Button mSecondDialogButton;
     private View mFingerprintContent;
 
     private Stage mStage = Stage.FINGERPRINT;
 
-    private KeyguardManager mKeyguardManager;
     private FingerprintManager.CryptoObject mCryptoObject;
     private FingerprintUiHelper mFingerprintUiHelper;
     FingerprintUiHelper.FingerprintUiHelperBuilder mFingerprintUiHelperBuilder;
@@ -66,7 +61,6 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         setRetainInstance(true);
         setStyle(DialogFragment.STYLE_NORMAL, android.R.style.Theme_Material_Light_Dialog);
 
-        mKeyguardManager = (KeyguardManager) getContext().getSystemService(Context.KEYGUARD_SERVICE);
         mFingerprintUiHelperBuilder = new FingerprintUiHelper.FingerprintUiHelperBuilder(
                 getContext(), getContext().getSystemService(FingerprintManager.class));
 
@@ -101,10 +95,6 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         int fingerprint_container_id = getResources()
                 .getIdentifier("fingerprint_container", "id", FingerprintAuth.packageName);
         mFingerprintContent = v.findViewById(fingerprint_container_id);
-
-        int new_fingerprint_enrolled_description_id = getResources()
-                .getIdentifier("new_fingerprint_enrolled_description", "id",
-                        FingerprintAuth.packageName);
 
         int fingerprint_icon_id = getResources()
                 .getIdentifier("fingerprint_icon", "id", FingerprintAuth.packageName);

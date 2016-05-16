@@ -47,29 +47,11 @@ public class FingerprintAuth extends CordovaPlugin {
     public static CallbackContext mCallbackContext;
     public static PluginResult mPluginResult;
 
-    /**
-     * Alias for our key in the Android Key Store
-     */
     private static String mAppId;
-
-    /**
-     * Used to encrypt token
-     */
     private static String mPlain;
-
-    /**
-     * Used to encrypt token
-     */
     private static byte[] mEncrypted;
-
-    /**
-     * Initialization vector
-     */
     private static byte[] mInitializationVector;
 
-    /**
-     * Constructor.
-     */
     public FingerprintAuth() {
     }
 
@@ -113,7 +95,7 @@ public class FingerprintAuth extends CordovaPlugin {
      * Executes the request and returns PluginResult.
      *
      * @param action          The action to execute.
-     * @param args            JSONArry of arguments for the plugin.
+     * @param args            JSONArray of arguments for the plugin.
      * @param callbackContext The callback id used when calling back into
      *                        JavaScript.
      * @return A PluginResult object with a status and message.
@@ -121,8 +103,10 @@ public class FingerprintAuth extends CordovaPlugin {
     public boolean execute(final String action,
                            JSONArray args,
                            CallbackContext callbackContext) throws JSONException {
+
         mCallbackContext = callbackContext;
         Log.v(TAG, "FingerprintAuth action: " + action);
+
         if (android.os.Build.VERSION.SDK_INT < 23) {
             Log.e(TAG, "minimum SDK version 23 required");
             mPluginResult = new PluginResult(PluginResult.Status.ERROR);
@@ -140,39 +124,24 @@ public class FingerprintAuth extends CordovaPlugin {
                 mCallbackContext.sendPluginResult(mPluginResult);
                 return true;
             }
-
             mAppId = arg_object.getString("appId");
             mPlain = arg_object.getString("plain");
             final String description = arg_object.getString("description");
 
-            if (isFingerprintAuthAvailable()) {
-                createKey();
+            createKey();
+
+            if (isFingerprintAuthAvailable() && initCipherEncryption()) {
                 cordova.getActivity().runOnUiThread(new Runnable() {
                     public void run() {
-                        // Set up the crypto object for later. The object will be authenticated by use
-                        // of the fingerprint.
-                        if (initCipherEncryption()) {
-                            mFragment = new FingerprintAuthenticationDialogFragment(Cipher.ENCRYPT_MODE, description);
-                            mFragment.setCancelable(false);
-                            // Show the fingerprint dialog. The user has the option to use the fingerprint with
-                            // crypto, or you can fall back to using a server-side verified password.
-                            mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherEncryption));
-                            mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
-                        } else {
-                            // This happens if the lock screen has been disabled or or a fingerprint got
-                            // enrolled. Thus show the dialog to authenticate with their password first
-                            // and ask the user if they want to authenticate with fingerprints in the
-                            // future
-                            mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherEncryption));
-                            mFragment.setStage(
-                                    FingerprintAuthenticationDialogFragment.Stage.NEW_FINGERPRINT_ENROLLED);
-                            mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
-                        }
+                        mFragment = new FingerprintAuthenticationDialogFragment(Cipher.ENCRYPT_MODE, description);
+                        mFragment.setCancelable(false);
+                        mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherEncryption));
+                        mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
                     }
                 });
+                mPluginResult = new  PluginResult(PluginResult.Status.NO_RESULT);
                 mPluginResult.setKeepCallback(true);
                 mCallbackContext.sendPluginResult(mPluginResult);
-
             } else {
                 mPluginResult = new PluginResult(PluginResult.Status.ERROR);
                 mCallbackContext.error("Fingerprint authentication not available");
@@ -192,33 +161,18 @@ public class FingerprintAuth extends CordovaPlugin {
             final byte[] initializationVector = Base64.decode(arg_object.getString("initializationVector"), 0);
             final String description = arg_object.getString("description");
 
-            if (isFingerprintAuthAvailable()) {
+            if (isFingerprintAuthAvailable() && initCipherDecryption(initializationVector)) {
                 cordova.getActivity().runOnUiThread(new Runnable() {
                     public void run() {
-                        // Set up the crypto object for later. The object will be authenticated by use
-                        // of the fingerprint.
-                        if (initCipherDecryption(initializationVector)) {
-                            mFragment = new FingerprintAuthenticationDialogFragment(Cipher.DECRYPT_MODE, description);
-                            mFragment.setCancelable(false);
-                            // Show the fingerprint dialog. The user has the option to use the fingerprint with
-                            // crypto, or you can fall back to using a server-side verified password.
-                            mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherDecryption));
-                            mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
-                        } else {
-                            // This happens if the lock screen has been disabled or or a fingerprint got
-                            // enrolled. Thus show the dialog to authenticate with their password first
-                            // and ask the user if they want to authenticate with fingerprints in the
-                            // future
-                            mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherDecryption));
-                            mFragment.setStage(
-                                    FingerprintAuthenticationDialogFragment.Stage.NEW_FINGERPRINT_ENROLLED);
-                            mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
-                        }
+                        mFragment = new FingerprintAuthenticationDialogFragment(Cipher.DECRYPT_MODE, description);
+                        mFragment.setCancelable(false);
+                        mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherDecryption));
+                        mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
                     }
                 });
+                mPluginResult = new  PluginResult(PluginResult.Status.NO_RESULT);
                 mPluginResult.setKeepCallback(true);
                 mCallbackContext.sendPluginResult(mPluginResult);
-
             } else {
                 mPluginResult = new PluginResult(PluginResult.Status.ERROR);
                 mCallbackContext.error("Fingerprint authentication not available");
@@ -243,14 +197,6 @@ public class FingerprintAuth extends CordovaPlugin {
                 && mFingerPrintManager.hasEnrolledFingerprints();
     }
 
-    /**
-     * Initialize the {@link Cipher} instance with the created key in the
-     * {@link #createKey()} method.
-     *
-     * @return {@code true} if initialization is successful, {@code false} if
-     * the lock screen has been disabled or reset after the key was generated,
-     * or if a fingerprint got enrolled after the key was generated.
-     */
     private boolean initCipherEncryption() {
         try {
             mKeyStore.load(null);
@@ -264,14 +210,6 @@ public class FingerprintAuth extends CordovaPlugin {
         }
     }
 
-    /**
-     * Initialize the {@link Cipher} instance with the created key in the
-     * {@link #createKey()} method.
-     *
-     * @return {@code true} if initialization is successful, {@code false} if
-     * the lock screen has been disabled or reset after the key was generated,
-     * or if a fingerprint got enrolled after the key was generated.
-     */
     private boolean initCipherDecryption(byte[] initializationVector) {
         try {
             mKeyStore.load(null);
@@ -283,24 +221,15 @@ public class FingerprintAuth extends CordovaPlugin {
         }
     }
 
-    /**
-     * Creates a symmetric key in the Android Key Store which can only be used
-     * after the user has authenticated with fingerprint.
-     */
     public static void createKey() {
-        // The enrolling flow for fingerprint. This is where you ask the user to set up fingerprint
-        // for your flow. Use of keys is necessary if you need to know if the set of
-        // enrolled fingerprints has changed.
         try {
             mKeyStore.load(null);
-            // Set the alias of the entry in Android KeyStore where the key will appear
-            // and the constrains (purposes) in the constructor of the Builder
             mKeyGenerator.init(new KeyGenParameterSpec.Builder(mAppId,
                     KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
                     .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
-                    // Require the user to authenticate with a fingerprint to authorize every use of the key
-                    .setUserAuthenticationRequired(true)
                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                    .setRandomizedEncryptionRequired(true)
+                    .setUserAuthenticationRequired(true)
                     .build());
             mKeyGenerator.generateKey();
         } catch (Exception e) {
@@ -340,4 +269,5 @@ public class FingerprintAuth extends CordovaPlugin {
         mPluginResult = new PluginResult(PluginResult.Status.ERROR);
         return false;
     }
+
 }
