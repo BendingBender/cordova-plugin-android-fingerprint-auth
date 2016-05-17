@@ -15,7 +15,7 @@
 -->
 <resources>
     <string name="cancel">Abbrechen</string>
-    <string name="fingerprint_auth_dialog_title">Fingerabdruck für "treefin"</string>
+    <string name="fingerprint_auth_dialog_title">Fingerprint Authentication</string>
     <string name="ok">OK</string>
     <string name="fingerprint_hint">Sensor</string>
     <string name="fingerprint_not_recognized">Fingerabdruck nicht erkannt</string>
