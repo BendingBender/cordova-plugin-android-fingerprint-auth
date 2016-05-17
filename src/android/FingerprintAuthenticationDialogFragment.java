@@ -45,12 +45,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     private FingerprintUiHelper mFingerprintUiHelper;
     FingerprintUiHelper.FingerprintUiHelperBuilder mFingerprintUiHelperBuilder;
 
-    private final int mCipherMode;
-    private final String mDescription;
-
-    public FingerprintAuthenticationDialogFragment(int cipherMode, String description) {
-        this.mCipherMode = cipherMode;
-        this.mDescription = description;
+    public FingerprintAuthenticationDialogFragment() {
     }
 
     @Override
@@ -63,7 +58,6 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
 
         mFingerprintUiHelperBuilder = new FingerprintUiHelper.FingerprintUiHelperBuilder(
                 getContext(), getContext().getSystemService(FingerprintManager.class));
-
     }
 
     @Override
@@ -90,7 +84,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         int fingerprint_description_id = getResources()
                 .getIdentifier("fingerprint_description", "id", FingerprintAuth.PACKAGE_NAME);
         TextView mFingerprintDescription = (TextView) v.findViewById(fingerprint_description_id);
-        mFingerprintDescription.setText(this.mDescription);
+        mFingerprintDescription.setText(getArguments().getString("description"));
 
         int fingerprint_container_id = getResources()
                 .getIdentifier("fingerprint_container", "id", FingerprintAuth.PACKAGE_NAME);
@@ -149,7 +143,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
 
     @Override
     public void onAuthenticated() {
-        switch (this.mCipherMode) {
+        switch (getArguments().getInt("mode")) {
             case Cipher.ENCRYPT_MODE:
                 FingerprintAuth.onAuthenticatedEncrypt();
                 break;
@@ -177,4 +171,5 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         FINGERPRINT,
         NEW_FINGERPRINT_ENROLLED
     }
+
 }

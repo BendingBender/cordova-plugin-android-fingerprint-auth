@@ -3,6 +3,7 @@ package com.cordova.plugin.android.fingerprintauth;
 import android.annotation.TargetApi;
 import android.app.KeyguardManager;
 import android.hardware.fingerprint.FingerprintManager;
+import android.os.Bundle;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
@@ -136,7 +137,11 @@ public class FingerprintAuth extends CordovaPlugin {
         if (isFingerprintAuthAvailable() && initCipherEncryption()) {
             cordova.getActivity().runOnUiThread(new Runnable() {
                 public void run() {
-                    mFragment = new FingerprintAuthenticationDialogFragment(Cipher.ENCRYPT_MODE, description);
+                    mFragment = new FingerprintAuthenticationDialogFragment();
+                    Bundle arguments = new Bundle();
+                    arguments.putInt("mode", Cipher.ENCRYPT_MODE);
+                    arguments.putString("description", description);
+                    mFragment.setArguments(arguments);
                     mFragment.setCancelable(false);
                     mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherEncryption));
                     mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
@@ -167,7 +172,11 @@ public class FingerprintAuth extends CordovaPlugin {
         if (isFingerprintAuthAvailable() && initCipherDecryption(initializationVector)) {
             cordova.getActivity().runOnUiThread(new Runnable() {
                 public void run() {
-                    mFragment = new FingerprintAuthenticationDialogFragment(Cipher.DECRYPT_MODE, description);
+                    mFragment = new FingerprintAuthenticationDialogFragment();
+                    Bundle arguments = new Bundle();
+                    arguments.putInt("mode", Cipher.DECRYPT_MODE);
+                    arguments.putString("description", description);
+                    mFragment.setArguments(arguments);
                     mFragment.setCancelable(false);
                     mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherDecryption));
                     mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
