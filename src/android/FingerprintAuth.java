@@ -267,7 +267,14 @@ public class FingerprintAuth extends CordovaPlugin {
     }
 
     public static void onCancel() {
-        sendResultError("User canceled fingerprint authentication", false);
+        JSONObject resultJson = new JSONObject();
+        try {
+            resultJson.put("userCanceled", true);
+        } catch (Exception e) {
+            sendResultError(e.getMessage(), true);
+            return;
+        }
+        sendResultSuccess(resultJson, false);
     }
 
     private static void sendResultSuccess(JSONObject resultJson, boolean keepCallback) {
