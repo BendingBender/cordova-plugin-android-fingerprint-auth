@@ -86,7 +86,7 @@ public class FingerprintUiHelper extends FingerprintManager.AuthenticationCallba
         mCancellationSignal = new CancellationSignal();
         mSelfCancelled = false;
         mFingerprintManager
-                .authenticate(cryptoObject, mCancellationSignal, 0 /* flags */, this, null);
+                .authenticate(cryptoObject, mCancellationSignal, 0, this, null);
 
         int ic_fp_40px_id = mContext.getResources()
                 .getIdentifier("ic_fp_40px", "drawable", FingerprintAuth.PACKAGE_NAME);

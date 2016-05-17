@@ -33,7 +33,9 @@ public class FingerprintAuth extends CordovaPlugin {
     private static final String DIALOG_FRAGMENT_TAG = "FpAuthDialog";
     private static final String ANDROID_KEY_STORE = "AndroidKeyStore";
     private static final String ALGORITHM = KeyProperties.KEY_ALGORITHM_AES;
-    private static final String TRANSFORMATION = KeyProperties.KEY_ALGORITHM_AES + "/" + KeyProperties.BLOCK_MODE_CBC + "/" + KeyProperties.ENCRYPTION_PADDING_PKCS7;
+    private static final String TRANSFORMATION = KeyProperties.KEY_ALGORITHM_AES
+            + "/" + KeyProperties.BLOCK_MODE_CBC
+            + "/" + KeyProperties.ENCRYPTION_PADDING_PKCS7;
 
     KeyguardManager mKeyguardManager;
     FingerprintAuthenticationDialogFragment mFragment;
@@ -135,7 +137,7 @@ public class FingerprintAuth extends CordovaPlugin {
         mPlain = argsObject.getString("plain");
         final String description = argsObject.getString("description");
 
-        if(!createKey()){
+        if (!createKey()) {
             return true;
         }
 
@@ -222,7 +224,7 @@ public class FingerprintAuth extends CordovaPlugin {
             return false;
         }
     }
-    
+
     public static boolean createKey() {
         try {
             mKeyStore.load(null);
@@ -254,35 +256,48 @@ public class FingerprintAuth extends CordovaPlugin {
     }
 
     public static void onAuthenticatedEncrypt() {
-        PluginResult result = new PluginResult(PluginResult.Status.OK);
-        result.setKeepCallback(false);
         JSONObject resultJson = new JSONObject();
         try {
             byte[] encrypted = mCipherEncryption.doFinal(mPlain.getBytes("UTF-8"));
             resultJson.put("result", Base64.encodeToString(encrypted, 0));
             resultJson.put("initializationVector", Base64.encodeToString(mInitializationVector, 0));
         } catch (Exception e) {
+            PluginResult result = new PluginResult(PluginResult.Status.ERROR);
+            result.setKeepCallback(true);
             mCallbackContext.error(e.getMessage());
-            mCallbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR));
+            mCallbackContext.sendPluginResult(result);
             return;
         }
+
+        PluginResult result = new PluginResult(PluginResult.Status.OK);
+        result.setKeepCallback(false);
         mCallbackContext.success(resultJson);
         mCallbackContext.sendPluginResult(result);
     }
 
     public static void onAuthenticatedDecrypt() {
-        PluginResult result = new PluginResult(PluginResult.Status.OK);
-        result.setKeepCallback(false);
         JSONObject resultJson = new JSONObject();
         try {
             byte[] plain = mCipherDecryption.doFinal(mEncrypted);
             resultJson.put("plain", new String(plain, "UTF-8"));
         } catch (Exception e) {
+            PluginResult result = new PluginResult(PluginResult.Status.ERROR);
+            result.setKeepCallback(true);
             mCallbackContext.error(e.getMessage());
-            mCallbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR));
+            mCallbackContext.sendPluginResult(result);
             return;
         }
+
+        PluginResult result = new PluginResult(PluginResult.Status.OK);
+        result.setKeepCallback(false);
         mCallbackContext.success(resultJson);
+        mCallbackContext.sendPluginResult(result);
+    }
+
+    public static void onCancel() {
+        JSONObject resultJson = new JSONObject();
+        PluginResult result = new PluginResult(PluginResult.Status.ERROR);
+        mCallbackContext.error("User canceled fingerprint authentication");
         mCallbackContext.sendPluginResult(result);
     }
 

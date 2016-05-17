@@ -83,7 +83,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         mCancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                dismiss();
+                onCancel();
             }
         });
 
@@ -162,6 +162,11 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
 
     @Override
     public void onError() {
+    }
+
+    public void onCancel() {
+        FingerprintAuth.onCancel();
+        dismiss();
     }
 
     /**
