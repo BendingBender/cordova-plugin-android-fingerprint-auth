@@ -202,7 +202,6 @@ public class FingerprintAuth extends CordovaPlugin {
         return true;
     }
 
-
     private boolean isFingerprintAuthAvailable() {
         return mFingerPrintManager.isHardwareDetected()
                 && mFingerPrintManager.hasEnrolledFingerprints();
