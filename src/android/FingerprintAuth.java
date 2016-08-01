@@ -1,6 +1,7 @@
 package com.cordova.plugin.android.fingerprintauth;
 
 import android.annotation.TargetApi;
+import android.app.FragmentTransaction;
 import android.app.KeyguardManager;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Bundle;
@@ -144,7 +145,10 @@ public class FingerprintAuth extends CordovaPlugin {
                     mFragment.setArguments(arguments);
                     mFragment.setCancelable(false);
                     mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherEncryption));
-                    mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
+                    
+                    FragmentTransaction transaction = cordova.getActivity().getFragmentManager().beginTransaction();
+                    transaction.add(mFragment, DIALOG_FRAGMENT_TAG);
+                    transaction.commitAllowingStateLoss();
                 }
             });
 
@@ -179,7 +183,10 @@ public class FingerprintAuth extends CordovaPlugin {
                     mFragment.setArguments(arguments);
                     mFragment.setCancelable(false);
                     mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherDecryption));
-                    mFragment.show(cordova.getActivity().getFragmentManager(), DIALOG_FRAGMENT_TAG);
+
+                    FragmentTransaction transaction = cordova.getActivity().getFragmentManager().beginTransaction();
+                    transaction.add(mFragment, DIALOG_FRAGMENT_TAG);
+                    transaction.commitAllowingStateLoss();
                 }
             });
 
