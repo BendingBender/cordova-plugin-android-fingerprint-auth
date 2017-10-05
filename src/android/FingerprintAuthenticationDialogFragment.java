@@ -17,6 +17,7 @@ package com.cordova.plugin.android.fingerprintauth;
 
 import android.annotation.TargetApi;
 import android.app.DialogFragment;
+import android.app.FragmentTransaction;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -63,6 +64,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         int fingerprint_auth_dialog_title_id = getResources()
                 .getIdentifier("fingerprint_auth_dialog_title", "string",
                         FingerprintAuth.PACKAGE_NAME);
@@ -151,7 +153,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
                 FingerprintAuth.onAuthenticatedDecrypt();
                 break;
         }
-        dismiss();
+        dismissAllowingStateLoss();
     }
 
     @Override
@@ -160,7 +162,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
 
     public void onCancel() {
         FingerprintAuth.onCancel();
-        dismiss();
+        dismissAllowingStateLoss();
     }
 
     /**
