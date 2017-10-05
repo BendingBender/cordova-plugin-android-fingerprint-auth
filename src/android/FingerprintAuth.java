@@ -145,7 +145,7 @@ public class FingerprintAuth extends CordovaPlugin {
                     mFragment.setArguments(arguments);
                     mFragment.setCancelable(false);
                     mFragment.setCryptoObject(new FingerprintManager.CryptoObject(mCipherEncryption));
-                    
+
                     FragmentTransaction transaction = cordova.getActivity().getFragmentManager().beginTransaction();
                     transaction.add(mFragment, DIALOG_FRAGMENT_TAG);
                     transaction.commitAllowingStateLoss();
